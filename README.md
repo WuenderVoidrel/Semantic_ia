@@ -12,36 +12,25 @@ O principal objetivo do Helena Semantic Studio é fornecer uma **camada semânti
 *   Permitir **testes locais** dessa interpretação.
 *   Encaminhar o Semantic Plan para um endpoint externo (ex: router/workflows da Helena) e mostrar a resposta (modo relay).
 *   Cadastrar e gerenciar domínios, métricas e skills.
-*   Preparar a arquitetura para futuras integrações com a IA Helena.
 
-## 3. Requisitos Funcionais
+## 3. Requisitos
 
-### 3.1. Frontend (Next.js)
+### 3.1. Requisitos Funcionais
 
-*   **Página de Simulação Semântica**: Permitir a inserção de perguntas em português e exibir detalhadamente o plano gerado (intenção, domínio, métrica, período, agrupamentos, confiança, explicação, skills sugeridas e o JSON completo).
-*   **Envio para Integração (Modo Relay)**: Permitir enviar o Semantic Plan para um endpoint configurado e exibir o retorno (status HTTP, URL, resposta JSON/texto e logs de encaminhamento).
-*   **Feedback Visual e Erros**: Exibir estados de carregamento, sucesso e erro (CORS, rede, endpoint não configurado). Mostrar mensagens amigáveis em caso de baixa confiança ou falta de configuração.
+A tabela abaixo detalha as funcionalidades essenciais do sistema:
 
-### 3.2. Backend (Fastify)
-
-*   **API de Geração de Semantic Plan**: Endpoint para receber o `input` e retornar o plano semântico estruturado.
-*   **API de Relay (Encaminhamento)**: Endpoint que gera o plano e o encaminha para um serviço externo, retornando os dados da transação (URL, status, resposta).
-*   **Healthcheck**: Endpoint para verificação de status do serviço.
-*   **CORS Configurável**: Suporte a `CORS_ORIGIN` via variáveis de ambiente.
-
-### 3.3. Regras de Interpretação (Semantic Plan)
-
-O sistema produz um plano com os seguintes campos mínimos:
-*   `intent`: ex. `query_metric`
-*   `domain`: objeto com `slug` e `name`
-*   `metric`: objeto com `technicalKey`, `name`, `unit`, `daxMeasure`
-*   `period`: objeto com `raw`, `type`, `value`
-*   `groupBy`: lista de agrupamentos
-*   `filters`: lista de filtros
-*   `skillsSuggested`: lista de skills sugeridas
-*   `confidence`: score entre 0 e 1
-*   `needsClarification`: flag booleana
-*   `explanation`: descrição textual da interpretação
+| Número de Ordem | Definição | Descrição | Prioridade |
+| :--- | :--- | :--- | :--- |
+| **RF-01** | Simulação Semântica | O sistema deve permitir ao usuário inserir perguntas em português e gerar um plano semântico estruturado (intenção, domínio, métrica, período, agrupamentos, confiança e explicação). | **Essencial** |
+| **RF-02** | Exibição de JSON | O sistema deve exibir o JSON completo do Semantic Plan em formato legível para validação técnica. | **Essencial** |
+| **RF-03** | Modo Relay (Envio) | O sistema deve permitir o envio do Semantic Plan para um endpoint externo configurado (ex: Helena Router). | **Importante** |
+| **RF-04** | Retorno de Integração | Ao utilizar o modo relay, o sistema deve exibir o status HTTP, a URL utilizada e a resposta recebida da integração. | **Importante** |
+| **RF-05** | Gestão de Domínios | O administrador deve ser capaz de cadastrar e listar domínios semânticos para organizar as métricas. | **Essencial** |
+| **RF-06** | Gestão de Métricas | O sistema deve permitir o cadastro de métricas vinculadas a domínios, incluindo chaves técnicas e sinônimos. | **Essencial** |
+| **RF-07** | Gestão de Skills | O sistema deve permitir o cadastro de skills sugeridas que auxiliam na interpretação da pergunta. | **Essencial** |
+| **RF-08** | Feedback de Erros | O sistema deve exibir mensagens claras em caso de falha de rede, erro de CORS ou falta de configuração de endpoint. | **Essencial** |
+| **RF-09** | Healthcheck | O backend deve expor um endpoint para verificação de disponibilidade do serviço. | **Essencial** |
+| **RF-10** | Histórico de Testes | O sistema deve salvar e listar o histórico de simulações semânticas realizadas. | **Importante** |
 
 ## 4. Stacks Tecnológicas
 
@@ -110,12 +99,12 @@ O sistema suporta as seguintes configurações:
 
 ## 7. Critérios de Aceite
 
-*   Gerar semantic plan com perguntas como: “quanto moeu ontem por turno?”, “qual a disponibilidade hoje?”.
+*   Gerar semantic plan com perguntas como: “quanto moeu ontem por turno?”.
 *   Visualização correta do JSON na interface.
 *   Funcionamento do relay caso `HELENA_ROUTER_URL` esteja configurada.
 *   Tratamento gracioso de erros e falta de configuração.
 
-## 8. Fora de Escopo (Fase Atual)
+## 8. Fora de Escopo
 
 *   Autenticação e login.
 *   Banco de dados obrigatório (suporte a modo sem DB).
