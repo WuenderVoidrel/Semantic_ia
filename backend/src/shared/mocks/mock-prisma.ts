@@ -560,12 +560,12 @@ export class MockPrismaClient {
       this.store.helenaConversations.push(created);
       return created;
     },
-    update: async ({ where, data }: { where: { id: string }; data: Partial<HelenaConversationRecord> }) => {
+    update: async ({ where, data }: { where: { id: string }; data: Partial<Omit<HelenaConversationRecord, "turnCount">> & { turnCount?: number | { increment: number } } }) => {
       const item = this.store.helenaConversations.find((conv) => conv.id === where.id);
       if (!item) {
         throw new Error("Helena conversation not found");
       }
-      const { turnCount, ...rest } = data as Partial<HelenaConversationRecord> & { turnCount?: number | { increment: number } };
+      const { turnCount, ...rest } = data;
       Object.assign(item, rest);
       if (typeof turnCount === "number") {
         item.turnCount = turnCount;
@@ -591,18 +591,43 @@ export class MockPrismaClient {
       );
       return typeof args?.take === "number" ? sorted.slice(0, args.take) : sorted;
     },
-    create: async ({ data }: { data: Omit<HelenaTurnRecord, "id" | "importedAt"> & Partial<Pick<HelenaTurnRecord, "importedAt">> }) => {
+    create: async ({ data }: { data: Partial<HelenaTurnRecord> & Pick<HelenaTurnRecord, "conversationId" | "sourceSessionId" | "sourceAssistantMessageId" | "sourceCreatedAt" | "question" | "answer"> }) => {
       const created: HelenaTurnRecord = {
         id: randomUUID(),
-        importedAt: createTimestamp(),
+        importedAt: data.importedAt ?? createTimestamp(),
+        conversationId: data.conversationId,
+        sourceSessionId: data.sourceSessionId,
+        sourceUserMessageId: data.sourceUserMessageId ?? null,
+        sourceAssistantMessageId: data.sourceAssistantMessageId,
+        sourceCreatedAt: data.sourceCreatedAt,
+        question: data.question,
+        answer: data.answer,
+        domain: data.domain ?? null,
+        routingReason: data.routingReason ?? null,
+        confidence: data.confidence ?? null,
         metricsRequested: data.metricsRequested ?? null,
+        periodStart: data.periodStart ?? null,
+        periodEnd: data.periodEnd ?? null,
         groupBy: data.groupBy ?? null,
+        toolUsed: data.toolUsed ?? null,
+        model: data.model ?? null,
+        promptTokens: data.promptTokens ?? null,
+        completionTokens: data.completionTokens ?? null,
+        totalTokens: data.totalTokens ?? null,
+        cachedTokens: data.cachedTokens ?? null,
+        costUsd: data.costUsd ?? null,
+        latencyMs: data.latencyMs ?? null,
+        status: data.status ?? null,
+        errorCode: data.errorCode ?? null,
+        verifierOk: data.verifierOk ?? null,
+        feedbackRating: data.feedbackRating ?? null,
+        feedbackReason: data.feedbackReason ?? null,
         studioPlan: data.studioPlan ?? null,
         studioDomain: data.studioDomain ?? null,
         studioMetricKey: data.studioMetricKey ?? null,
         studioConfidence: data.studioConfidence ?? null,
-        ...data
-      } as HelenaTurnRecord;
+        hasDivergence: data.hasDivergence ?? false
+      };
       this.store.helenaTurns.push(created);
       return created;
     },
@@ -617,12 +642,17 @@ export class MockPrismaClient {
   };
 
   helenaSyncRun = {
-    create: async ({ data }: { data: Omit<HelenaSyncRunRecord, "id"> & Partial<Pick<HelenaSyncRunRecord, "startedAt">> }) => {
+    create: async ({ data }: { data: Partial<HelenaSyncRunRecord> & Pick<HelenaSyncRunRecord, "status" | "trigger" | "turnsImported"> }) => {
       const created: HelenaSyncRunRecord = {
         id: randomUUID(),
         startedAt: data.startedAt ?? createTimestamp(),
-        ...data
-      } as HelenaSyncRunRecord;
+        finishedAt: data.finishedAt ?? null,
+        status: data.status,
+        trigger: data.trigger,
+        turnsImported: data.turnsImported,
+        watermark: data.watermark ?? null,
+        error: data.error ?? null
+      };
       this.store.helenaSyncRuns.push(created);
       return created;
     },
