@@ -9,6 +9,7 @@ import { ingestRoutes } from "./modules/ingest/ingest.routes.js";
 import { metricRoutes } from "./modules/metrics/metric.routes.js";
 import { semanticRoutes } from "./modules/semantic/semantic.routes.js";
 import { skillRoutes } from "./modules/skills/skill.routes.js";
+import { telemetryRoutes } from "./modules/telemetry/telemetry.routes.js";
 import { registerCors } from "./plugins/cors.js";
 import { registerIngest } from "./plugins/ingest.js";
 import { registerPrisma } from "./plugins/prisma.js";
@@ -34,6 +35,7 @@ export async function buildApp() {
   await catalogSuggestionRoutes(app);
   await goldenCaseRoutes(app);
   await ingestRoutes(app);
+  await telemetryRoutes(app);
 
   return app;
 }
