@@ -93,6 +93,65 @@ type GoldenCaseRecord = {
   updatedAt: Date;
 };
 
+type HelenaConversationRecord = {
+  id: string;
+  sourceSessionId: string;
+  chatSlug: string | null;
+  userLabel: string | null;
+  startedAt: Date;
+  lastTurnAt: Date;
+  turnCount: number;
+  importedAt: Date;
+};
+
+type HelenaTurnRecord = {
+  id: string;
+  conversationId: string;
+  sourceSessionId: string;
+  sourceUserMessageId: string | null;
+  sourceAssistantMessageId: string;
+  sourceCreatedAt: Date;
+  importedAt: Date;
+  question: string;
+  answer: string;
+  domain: string | null;
+  routingReason: string | null;
+  confidence: number | null;
+  metricsRequested: unknown;
+  periodStart: Date | null;
+  periodEnd: Date | null;
+  groupBy: unknown;
+  toolUsed: string | null;
+  model: string | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  cachedTokens: number | null;
+  costUsd: number | null;
+  latencyMs: number | null;
+  status: string | null;
+  errorCode: string | null;
+  verifierOk: boolean | null;
+  feedbackRating: string | null;
+  feedbackReason: string | null;
+  studioPlan: unknown;
+  studioDomain: string | null;
+  studioMetricKey: string | null;
+  studioConfidence: number | null;
+  hasDivergence: boolean;
+};
+
+type HelenaSyncRunRecord = {
+  id: string;
+  startedAt: Date;
+  finishedAt: Date | null;
+  status: string;
+  trigger: string;
+  turnsImported: number;
+  watermark: Date | null;
+  error: string | null;
+};
+
 function createTimestamp() {
   return new Date();
 }
@@ -216,7 +275,10 @@ function createSeedData() {
     semanticTests: [] as SemanticTestRecord[],
     semanticTokenMisses: [] as SemanticTokenMissRecord[],
     catalogSuggestions: [] as CatalogSuggestionRecord[],
-    goldenCases: [] as GoldenCaseRecord[]
+    goldenCases: [] as GoldenCaseRecord[],
+    helenaConversations: [] as HelenaConversationRecord[],
+    helenaTurns: [] as HelenaTurnRecord[],
+    helenaSyncRuns: [] as HelenaSyncRunRecord[]
   };
 }
 
@@ -482,5 +544,106 @@ export class MockPrismaClient {
       return created;
     },
     findMany: async () => [...this.store.goldenCases].sort((first, second) => second.createdAt.getTime() - first.createdAt.getTime())
+  };
+
+  helenaConversation = {
+    count: async () => this.store.helenaConversations.length,
+    findMany: async () => [...this.store.helenaConversations],
+    findFirst: async ({ where }: { where: { sourceSessionId: string } }) =>
+      this.store.helenaConversations.find((item) => item.sourceSessionId === where.sourceSessionId) ?? null,
+    create: async ({ data }: { data: Omit<HelenaConversationRecord, "id" | "importedAt"> & Partial<Pick<HelenaConversationRecord, "importedAt">> }) => {
+      const created: HelenaConversationRecord = {
+        id: randomUUID(),
+        importedAt: createTimestamp(),
+        ...data
+      };
+      this.store.helenaConversations.push(created);
+      return created;
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<HelenaConversationRecord> }) => {
+      const item = this.store.helenaConversations.find((conv) => conv.id === where.id);
+      if (!item) {
+        throw new Error("Helena conversation not found");
+      }
+      Object.assign(item, data);
+      return item;
+    }
+  };
+
+  helenaTurn = {
+    count: async () => this.store.helenaTurns.length,
+    findUnique: async ({ where }: { where: { sourceAssistantMessageId?: string; id?: string } }) =>
+      this.store.helenaTurns.find((turn) =>
+        (where.sourceAssistantMessageId && turn.sourceAssistantMessageId === where.sourceAssistantMessageId) ||
+        (where.id && turn.id === where.id)
+      ) ?? null,
+    findMany: async (args?: { orderBy?: { sourceCreatedAt?: "desc" | "asc" }; take?: number }) => {
+      const sorted = [...this.store.helenaTurns].sort((first, second) =>
+        args?.orderBy?.sourceCreatedAt === "asc"
+          ? first.sourceCreatedAt.getTime() - second.sourceCreatedAt.getTime()
+          : second.sourceCreatedAt.getTime() - first.sourceCreatedAt.getTime()
+      );
+      return typeof args?.take === "number" ? sorted.slice(0, args.take) : sorted;
+    },
+    create: async ({ data }: { data: Omit<HelenaTurnRecord, "id" | "importedAt"> & Partial<Pick<HelenaTurnRecord, "importedAt">> }) => {
+      const created: HelenaTurnRecord = {
+        id: randomUUID(),
+        importedAt: createTimestamp(),
+        metricsRequested: data.metricsRequested ?? null,
+        groupBy: data.groupBy ?? null,
+        studioPlan: data.studioPlan ?? null,
+        studioDomain: data.studioDomain ?? null,
+        studioMetricKey: data.studioMetricKey ?? null,
+        studioConfidence: data.studioConfidence ?? null,
+        ...data
+      } as HelenaTurnRecord;
+      this.store.helenaTurns.push(created);
+      return created;
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<HelenaTurnRecord> }) => {
+      const item = this.store.helenaTurns.find((turn) => turn.id === where.id);
+      if (!item) {
+        throw new Error("Helena turn not found");
+      }
+      Object.assign(item, data);
+      return item;
+    }
+  };
+
+  helenaSyncRun = {
+    create: async ({ data }: { data: Omit<HelenaSyncRunRecord, "id"> & Partial<Pick<HelenaSyncRunRecord, "startedAt">> }) => {
+      const created: HelenaSyncRunRecord = {
+        id: randomUUID(),
+        startedAt: data.startedAt ?? createTimestamp(),
+        ...data
+      } as HelenaSyncRunRecord;
+      this.store.helenaSyncRuns.push(created);
+      return created;
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<HelenaSyncRunRecord> }) => {
+      const item = this.store.helenaSyncRuns.find((run) => run.id === where.id);
+      if (!item) {
+        throw new Error("Helena sync run not found");
+      }
+      Object.assign(item, data);
+      return item;
+    },
+    findFirst: async ({ where, orderBy }: { where?: { status?: string }; orderBy?: { startedAt?: "desc" | "asc" } }) => {
+      const filtered = where?.status ? this.store.helenaSyncRuns.filter((run) => run.status === where.status) : [...this.store.helenaSyncRuns];
+      const sorted = filtered.sort((first, second) =>
+        orderBy?.startedAt === "asc"
+          ? first.startedAt.getTime() - second.startedAt.getTime()
+          : second.startedAt.getTime() - first.startedAt.getTime()
+      );
+      return sorted[0] ?? null;
+    },
+    findMany: async (args?: { orderBy?: { startedAt?: "desc" | "asc" }; take?: number }) => {
+      const sorted = [...this.store.helenaSyncRuns].sort((first, second) =>
+        args?.orderBy?.startedAt === "asc"
+          ? first.startedAt.getTime() - second.startedAt.getTime()
+          : second.startedAt.getTime() - first.startedAt.getTime()
+      );
+      return typeof args?.take === "number" ? sorted.slice(0, args.take) : sorted;
+    }
   };
 }
