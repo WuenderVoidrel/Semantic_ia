@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+.env
+backend/.env
+frontend/.env.local
+frontend/.env
+backend/generated
+*.log
+package-lock.json

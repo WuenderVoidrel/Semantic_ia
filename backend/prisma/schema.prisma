@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Domain {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  metrics     Metric[]
+}
+
+model Metric {
+  id           String   @id @default(uuid())
+  domainId     String
+  domain       Domain   @relation(fields: [domainId], references: [id])
+  name         String
+  technicalKey String   @unique
+  daxMeasure   String
+  unit         String?
+  description  String?
+  synonyms     Json
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  suggestions  CatalogSuggestion[]
+}
+
+model Skill {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  type        String
+  description String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SemanticTest {
+  id                 String   @id @default(uuid())
+  input              String
+  normalizedInput    String?
+  generatedPlan      Json
+  confidence         Float
+  needsClarification Boolean  @default(false)
+  resolvedDomainId   String?
+  resolvedMetricId   String?
+  periodValue        String?
+  groupBy            Json?
+  relayResult        Json?
+  helenaDomainSlug   String?
+  helenaMetricKey    String?
+  hasDivergence      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  tokenMisses        SemanticTokenMiss[]
+  suggestions        CatalogSuggestion[]
+  goldenCase         GoldenCase?
+}
+
+model SemanticTokenMiss {
+  id              String       @id @default(uuid())
+  semanticTestId  String
+  semanticTest    SemanticTest @relation(fields: [semanticTestId], references: [id])
+  token           String
+  normalizedToken String
+  reason          String
+  createdAt       DateTime     @default(now())
+
+  @@index([normalizedToken])
+}
+
+model CatalogSuggestion {
+  id              String        @id @default(uuid())
+  semanticTestId  String?
+  semanticTest    SemanticTest? @relation(fields: [semanticTestId], references: [id])
+  type            String
+  status          String        @default("pending")
+  metricId        String?
+  metric          Metric?       @relation(fields: [metricId], references: [id])
+  domainId        String?
+  suggestedAlias  String
+  normalizedAlias String
+  evidence        Json
+  confidence      Float?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNote      String?
+  createdAt       DateTime      @default(now())
+
+  @@index([status])
+  @@index([normalizedAlias])
+}
+
+model GoldenCase {
+  id                         String       @id @default(uuid())
+  semanticTestId             String       @unique
+  semanticTest               SemanticTest @relation(fields: [semanticTestId], references: [id])
+  input                      String
+  expectedDomainSlug         String?
+  expectedMetricKey          String?
+  expectedPeriodValue        String?
+  expectedGroupBy            Json
+  expectedNeedsClarification Boolean?
+  tags                       Json?
+  notes                      String?
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
+}

@@ -1,0 +1,1065 @@
+Helena Semantic Studio — Implementation Plan Revisado
+
+Aplicação fullstack para gerenciar, testar e validar a primeira camada semântica da IA Helena.
+
+O projeto será uma base técnica funcional e extensível para administrar domínios, métricas, skills e simulações semânticas, gerando um semantic plan estruturado que futuramente poderá ser enviado aos workflows da IA Helena.
+
+==================================================
+1. Stack
+==================================================
+
+Backend:
+- Node.js
+- Fastify
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- Zod
+- @fastify/cors
+- dotenv
+- API REST
+- Estrutura modular
+
+Frontend:
+- Next.js com App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Lucide React
+- Componentização reutilizável
+- Interface em português brasileiro
+
+Infra:
+- Docker Compose
+- PostgreSQL 16
+- dotenv
+- README completo
+
+Observação sobre Tailwind/shadcn:
+Usar uma versão do Tailwind CSS compatível com shadcn/ui. Caso Tailwind v4 gere incompatibilidade, usar a configuração estável recomendada pelo shadcn/ui.
+
+==================================================
+2. Objetivo do Projeto
+==================================================
+
+Criar o Helena Semantic Studio, uma aplicação administrativa para:
+
+- Cadastrar domínios semânticos.
+- Cadastrar métricas semânticas.
+- Cadastrar skills.
+- Simular perguntas em linguagem natural.
+- Gerar semantic plans estruturados.
+- Salvar histórico de testes semânticos.
+- Exibir dashboard com estatísticas básicas.
+- Preparar a arquitetura para integração futura com IA Helena.
+
+A primeira versão não deve integrar com:
+- Power BI real.
+- LLM real.
+- Workflows reais da Helena.
+- Senior.
+- Supabase.
+- n8n.
+- APIs internas reais.
+
+A aplicação deve deixar a base preparada para isso futuramente.
+
+==================================================
+3. Estrutura Geral do Projeto
+==================================================
+
+project-root/
+├── README.md
+├── docker-compose.yml
+├── .env.example
+├── backend/
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── seed.ts
+│   └── src/
+│       ├── server.ts
+│       ├── app.ts
+│       ├── env.ts
+│       ├── plugins/
+│       │   ├── cors.ts
+│       │   └── prisma.ts
+│       ├── shared/
+│       │   ├── errors/
+│       │   │   ├── app-error.ts
+│       │   │   └── error-handler.ts
+│       │   ├── utils/
+│       │   │   ├── normalize-text.ts
+│       │   │   └── calculate-confidence.ts
+│       │   └── types/
+│       └── modules/
+│           ├── health/
+│           │   └── health.routes.ts
+│           ├── dashboard/
+│           │   ├── dashboard.routes.ts
+│           │   ├── dashboard.controller.ts
+│           │   └── dashboard.service.ts
+│           ├── domains/
+│           │   ├── domain.routes.ts
+│           │   ├── domain.controller.ts
+│           │   ├── domain.service.ts
+│           │   ├── domain.repository.ts
+│           │   └── domain.schema.ts
+│           ├── metrics/
+│           │   ├── metric.routes.ts
+│           │   ├── metric.controller.ts
+│           │   ├── metric.service.ts
+│           │   ├── metric.repository.ts
+│           │   └── metric.schema.ts
+│           ├── skills/
+│           │   ├── skill.routes.ts
+│           │   ├── skill.controller.ts
+│           │   ├── skill.service.ts
+│           │   ├── skill.repository.ts
+│           │   └── skill.schema.ts
+│           └── semantic/
+│               ├── semantic.routes.ts
+│               ├── semantic.controller.ts
+│               ├── semantic.service.ts
+│               ├── semantic.repository.ts
+│               └── semantic.schema.ts
+└── frontend/
+    ├── package.json
+    ├── next.config.ts
+    ├── tailwind.config.ts
+    ├── postcss.config.js
+    └── src/
+        ├── app/
+        │   ├── layout.tsx
+        │   ├── page.tsx
+        │   ├── dashboard/
+        │   │   └── page.tsx
+        │   ├── domains/
+        │   │   └── page.tsx
+        │   ├── metrics/
+        │   │   └── page.tsx
+        │   ├── skills/
+        │   │   └── page.tsx
+        │   ├── semantic/
+        │   │   └── page.tsx
+        │   └── history/
+        │       └── page.tsx
+        ├── components/
+        │   ├── layout/
+        │   │   ├── app-layout.tsx
+        │   │   ├── app-sidebar.tsx
+        │   │   └── app-header.tsx
+        │   ├── shared/
+        │   │   ├── page-header.tsx
+        │   │   ├── status-badge.tsx
+        │   │   ├── loading-state.tsx
+        │   │   ├── error-state.tsx
+        │   │   └── empty-state.tsx
+        │   └── ui/
+        ├── lib/
+        │   ├── api.ts
+        │   ├── constants.ts
+        │   └── formatters.ts
+        └── types/
+            └── index.ts
+
+==================================================
+4. Infraestrutura
+==================================================
+
+[NEW] docker-compose.yml
+
+Criar container PostgreSQL 16:
+
+- image: postgres:16
+- container_name: helena_semantic_studio_db
+- POSTGRES_USER=postgres
+- POSTGRES_PASSWORD=postgres
+- POSTGRES_DB=helena_semantic_studio
+- porta 5432:5432
+- volume persistente
+
+Comando esperado na raiz:
+
+docker compose up -d
+
+[NEW] .env.example
+
+Variáveis esperadas:
+
+# Backend
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/helena_semantic_studio?schema=public"
+PORT=3333
+NODE_ENV=development
+CORS_ORIGIN="http://localhost:3000"
+
+# Frontend
+NEXT_PUBLIC_API_URL="http://localhost:3333"
+
+Também criar .env.example dentro de backend e frontend, se necessário.
+
+==================================================
+5. Backend
+==================================================
+
+5.1 Dependências
+
+Criar backend/package.json com:
+
+Dependencies:
+- fastify
+- @fastify/cors
+- @prisma/client
+- zod
+- dotenv
+
+Dev dependencies:
+- typescript
+- tsx
+- prisma
+- @types/node
+
+Scripts:
+- dev
+- build
+- start
+- prisma:generate
+- prisma:migrate
+- prisma:seed
+
+Comandos esperados:
+
+npm install
+npx prisma generate
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+
+5.2 Configuração TypeScript
+
+Criar backend/tsconfig.json com configuração adequada para Node.js + TypeScript.
+
+5.3 Variáveis de Ambiente
+
+Criar backend/src/env.ts usando Zod para validar:
+
+- DATABASE_URL
+- PORT
+- NODE_ENV
+- CORS_ORIGIN
+
+5.4 Fastify App
+
+Criar:
+
+backend/src/app.ts
+backend/src/server.ts
+
+Responsabilidades:
+
+app.ts:
+- Criar instância Fastify.
+- Registrar plugins.
+- Registrar error handler global.
+- Registrar rotas.
+- Retornar app configurado.
+
+server.ts:
+- Importar app.
+- Iniciar servidor na porta configurada.
+- Tratar erro de bootstrap.
+
+5.5 Plugins
+
+Criar:
+
+backend/src/plugins/cors.ts
+- Configurar @fastify/cors.
+- Origin vindo de CORS_ORIGIN.
+
+backend/src/plugins/prisma.ts
+- Criar PrismaClient.
+- Decorar Fastify com prisma.
+- Encerrar conexão corretamente no onClose.
+
+5.6 Erros Padronizados
+
+Criar:
+
+backend/src/shared/errors/app-error.ts
+- Classe AppError.
+- Campos: message, statusCode, details opcional.
+
+backend/src/shared/errors/error-handler.ts
+- Handler global.
+- Tratar AppError.
+- Tratar erros do Zod.
+- Tratar erros inesperados.
+- Retornar JSON padronizado.
+
+Formato de erro:
+
+{
+  "error": true,
+  "message": "Mensagem do erro",
+  "statusCode": 400,
+  "details": {}
+}
+
+5.7 Utils
+
+Criar:
+
+backend/src/shared/utils/normalize-text.ts
+- Lowercase.
+- Remover acentos.
+- Remover espaços duplicados.
+
+backend/src/shared/utils/calculate-confidence.ts
+- Função para calcular score de confiança do semantic plan.
+
+Regra inicial de confidence sugerida:
+- +0.50 se encontrar sinônimo exato da métrica.
+- +0.30 se encontrar nome da métrica.
+- +0.10 se detectar período.
+- +0.10 se detectar agrupamento.
+- +0.10 se detectar domínio.
+- Limitar o valor máximo em 1.0.
+
+==================================================
+6. Prisma
+==================================================
+
+Criar backend/prisma/schema.prisma com os models:
+
+Domain:
+- id String @id @default(uuid())
+- name String
+- slug String @unique
+- description String?
+- status String @default("active")
+- createdAt DateTime @default(now())
+- updatedAt DateTime @updatedAt
+- metrics Metric[]
+
+Metric:
+- id String @id @default(uuid())
+- domainId String
+- domain Domain @relation(fields: [domainId], references: [id])
+- name String
+- technicalKey String @unique
+- daxMeasure String
+- unit String?
+- description String?
+- synonyms Json
+- status String @default("active")
+- createdAt DateTime @default(now())
+- updatedAt DateTime @updatedAt
+
+Skill:
+- id String @id @default(uuid())
+- name String @unique
+- type String
+- description String?
+- status String @default("active")
+- createdAt DateTime @default(now())
+- updatedAt DateTime @updatedAt
+
+SemanticTest:
+- id String @id @default(uuid())
+- input String
+- generatedPlan Json
+- confidence Float
+- needsClarification Boolean @default(false)
+- createdAt DateTime @default(now())
+
+Observação:
+Usar Json para synonyms e generatedPlan para evitar problemas de compatibilidade e facilitar evolução futura.
+
+==================================================
+7. Seed
+==================================================
+
+Criar backend/prisma/seed.ts com dados fictícios.
+
+Domínios:
+- Agrícola
+- Plantio/Preparo
+- Automotiva
+- Matéria-Prima
+
+Métricas:
+- Moagem
+  - domain: Matéria-Prima
+  - technicalKey: materia_prima.moagem_ton
+  - daxMeasure: [Moagem Ton]
+  - unit: t
+  - synonyms: ["moagem", "moeu", "cana moída", "cana moida", "moagem do dia"]
+
+- Disponibilidade de Equipamentos
+  - domain: Automotiva
+  - technicalKey: automotiva.disponibilidade_equipamentos
+  - daxMeasure: [Disponibilidade Equipamentos]
+  - unit: %
+  - synonyms: ["disponibilidade", "disp", "disponibilidade da frota", "equipamentos disponíveis"]
+
+- Hectares Plantados
+  - domain: Plantio/Preparo
+  - technicalKey: plantio.hectares_plantio_diario
+  - daxMeasure: [Hectares Plantio Diario]
+  - unit: ha
+  - synonyms: ["hectares plantados", "plantio", "área plantada", "area plantada"]
+
+- Entrada de Cana
+  - domain: Agrícola
+  - technicalKey: agricola.entrada_cana
+  - daxMeasure: [Toneladas Frentes]
+  - unit: t
+  - synonyms: ["entrada de cana", "entrega", "toneladas", "cana entregue"]
+
+Skills:
+- metric-resolver
+- ranges-relativos
+- turnos-rules
+- data-freshness
+- chart-recommendation
+- answer-verifier
+
+==================================================
+8. Backend Modules e Endpoints
+==================================================
+
+8.1 Health
+
+GET /health
+
+Resposta:
+
+{
+  "status": "ok",
+  "service": "helena-semantic-studio-api"
+}
+
+8.2 Dashboard
+
+GET /api/dashboard/stats
+
+Resposta:
+
+{
+  "domains": 4,
+  "metrics": 4,
+  "skills": 6,
+  "semanticTests": 0
+}
+
+8.3 Domains
+
+Arquitetura:
+- domain.routes.ts
+- domain.controller.ts
+- domain.service.ts
+- domain.repository.ts
+- domain.schema.ts
+
+Endpoints:
+- GET /api/domains
+- GET /api/domains/:id
+- POST /api/domains
+
+Validação com Zod.
+
+8.4 Metrics
+
+Arquitetura:
+- metric.routes.ts
+- metric.controller.ts
+- metric.service.ts
+- metric.repository.ts
+- metric.schema.ts
+
+Endpoints:
+- GET /api/metrics
+- GET /api/metrics/:id
+- POST /api/metrics
+
+GET /api/metrics deve retornar também o domínio relacionado.
+
+Validação com Zod.
+
+8.5 Skills
+
+Arquitetura:
+- skill.routes.ts
+- skill.controller.ts
+- skill.service.ts
+- skill.repository.ts
+- skill.schema.ts
+
+Endpoints:
+- GET /api/skills
+- GET /api/skills/:id
+- POST /api/skills
+
+Validação com Zod.
+
+8.6 Semantic
+
+Arquitetura:
+- semantic.routes.ts
+- semantic.controller.ts
+- semantic.service.ts
+- semantic.repository.ts
+- semantic.schema.ts
+
+Endpoints:
+- POST /api/semantic/plan
+- GET /api/semantic/history
+
+POST /api/semantic/plan
+
+Request:
+
+{
+  "input": "quanto moeu ontem por turno?"
+}
+
+Response:
+
+{
+  "intent": "query_metric",
+  "domain": {
+    "id": "uuid",
+    "slug": "materia-prima",
+    "name": "Matéria-Prima"
+  },
+  "metric": {
+    "id": "uuid",
+    "technicalKey": "materia_prima.moagem_ton",
+    "name": "Moagem",
+    "unit": "t",
+    "daxMeasure": "[Moagem Ton]"
+  },
+  "period": {
+    "raw": "ontem",
+    "type": "relative",
+    "value": "yesterday"
+  },
+  "groupBy": ["shift"],
+  "filters": [],
+  "skillsSuggested": [
+    "metric-resolver",
+    "ranges-relativos",
+    "turnos-rules"
+  ],
+  "confidence": 0.94,
+  "needsClarification": false,
+  "explanation": "A pergunta indica consulta da métrica Moagem, com período relativo ontem e agrupamento por turno."
+}
+
+Lógica inicial:
+- Receber input.
+- Normalizar texto.
+- Buscar métricas ativas no banco com domínio.
+- Comparar input com nome da métrica e synonyms.
+- Detectar período.
+- Detectar agrupamentos.
+- Sugerir skills.
+- Calcular confidence.
+- Marcar needsClarification como true se confidence < 0.5 ou se nenhuma métrica for encontrada.
+- Salvar SemanticTest.
+- Retornar plano.
+
+GET /api/semantic/history
+
+- Retornar últimos testes semânticos.
+- Ordenar por createdAt desc.
+- Limitar por padrão a 20 registros.
+- Aceitar query param opcional limit.
+
+==================================================
+9. Regras Técnicas do Backend
+==================================================
+
+- Controllers não acessam Prisma diretamente.
+- Controllers chamam services.
+- Services chamam repositories.
+- Repositories acessam Prisma.
+- Schemas Zod validam input.
+- Usar AppError para erros conhecidos.
+- Usar error handler global.
+- Usar nomes técnicos em inglês no código.
+- Usar mensagens em português brasileiro quando retornadas para usuário.
+- Não criar autenticação.
+- Não criar integrações externas reais.
+- Não usar dados sensíveis.
+- Não chamar LLM.
+- Não chamar Power BI.
+- Não chamar workflows reais.
+
+==================================================
+10. Frontend
+==================================================
+
+10.1 Dependências
+
+Criar frontend/package.json com:
+
+Dependencies:
+- next
+- react
+- react-dom
+- lucide-react
+- class-variance-authority
+- clsx
+- tailwind-merge
+- tailwindcss-animate
+- @radix-ui/react-slot
+- @radix-ui/react-dialog
+- @radix-ui/react-separator
+
+Dev dependencies:
+- typescript
+- eslint
+- eslint-config-next
+- tailwindcss
+- postcss
+- autoprefixer
+- @types/node
+- @types/react
+- @types/react-dom
+
+Scripts:
+- dev
+- build
+- start
+- lint
+
+10.2 UI
+
+Usar shadcn/ui com componentes:
+- Button
+- Card
+- Input
+- Badge
+- Table
+- Textarea
+- Separator
+- Sheet
+
+10.3 Tipos
+
+Criar frontend/src/types/index.ts com:
+
+- Domain
+- Metric
+- Skill
+- SemanticTest
+- SemanticPlan
+- DashboardStats
+
+Usar nomes técnicos em inglês nos tipos.
+
+10.4 API Client
+
+Criar frontend/src/lib/api.ts.
+
+Todas as chamadas ao backend devem estar centralizadas aqui.
+
+Usar NEXT_PUBLIC_API_URL.
+
+Funções:
+- getDomains()
+- getMetrics()
+- getSkills()
+- getDashboardStats()
+- generateSemanticPlan(input: string)
+- getSemanticHistory(limit?: number)
+
+Não espalhar fetch diretamente nos componentes.
+
+10.5 Constants e Formatters
+
+Criar:
+
+frontend/src/lib/constants.ts
+- Itens de navegação da sidebar.
+- Labels de status.
+- Labels de groupBy.
+
+frontend/src/lib/formatters.ts
+- formatDateTime()
+- formatPercent()
+- formatStatus()
+
+==================================================
+11. Componentes Frontend
+==================================================
+
+Layout:
+
+frontend/src/components/layout/app-layout.tsx
+- Estrutura geral com sidebar, header e main content.
+
+frontend/src/components/layout/app-sidebar.tsx
+- Navegação:
+  - Início
+  - Dashboard
+  - Domínios
+  - Métricas
+  - Skills
+  - Simulador Semântico
+  - Histórico
+
+frontend/src/components/layout/app-header.tsx
+- Header superior.
+- Título curto.
+- Indicação de ambiente local/dev.
+
+Shared:
+
+frontend/src/components/shared/page-header.tsx
+frontend/src/components/shared/status-badge.tsx
+frontend/src/components/shared/loading-state.tsx
+frontend/src/components/shared/error-state.tsx
+frontend/src/components/shared/empty-state.tsx
+
+==================================================
+12. Páginas Frontend
+==================================================
+
+12.1 /
+
+Landing page simples.
+
+Conteúdo:
+- Nome: Helena Semantic Studio.
+- Descrição: Aplicação para administrar e testar a camada semântica da IA Helena.
+- Botão para acessar dashboard.
+- Visual moderno e limpo.
+
+12.2 /dashboard
+
+Exibir cards com:
+- Total de domínios.
+- Total de métricas.
+- Total de skills.
+- Total de testes semânticos.
+
+Consumir GET /api/dashboard/stats.
+
+12.3 /domains
+
+Tabela de domínios:
+- Nome.
+- Slug.
+- Descrição.
+- Status.
+
+Consumir GET /api/domains.
+
+12.4 /metrics
+
+Tabela de métricas:
+- Nome.
+- Domínio.
+- Chave técnica.
+- Medida DAX.
+- Unidade.
+- Status.
+
+Consumir GET /api/metrics.
+
+12.5 /skills
+
+Tabela de skills:
+- Nome.
+- Tipo.
+- Descrição.
+- Status.
+
+Consumir GET /api/skills.
+
+12.6 /semantic
+
+Tela principal do projeto.
+
+Elementos:
+- PageHeader.
+- Textarea para pergunta.
+- Botão "Gerar plano semântico".
+- LoadingState enquanto processa.
+- ErrorState se falhar.
+- Cards com:
+  - Intenção.
+  - Domínio.
+  - Métrica.
+  - Período.
+  - Agrupamentos.
+  - Confiança.
+  - Necessita esclarecimento.
+  - Skills sugeridas.
+- Bloco de JSON formatado com o plano completo.
+
+Exemplo de pergunta no placeholder:
+
+"quanto moeu ontem por turno?"
+
+Consumir POST /api/semantic/plan.
+
+12.7 /history
+
+Tabela/lista dos testes semânticos:
+- Pergunta original.
+- Confiança.
+- Necessita esclarecimento.
+- Data/hora.
+- Resumo do plano.
+
+Consumir GET /api/semantic/history.
+
+==================================================
+13. Padrões de Interface
+==================================================
+
+- Interface em português brasileiro.
+- Código com nomes técnicos em inglês.
+- Layout administrativo moderno.
+- Responsivo.
+- Usar cards, tabelas e badges.
+- Usar ícones do Lucide React.
+- Exibir estados de carregamento, erro e vazio.
+- Evitar excesso visual.
+- Manter estética alinhada a um painel técnico da IA Helena.
+
+==================================================
+14. Semantic Plan Logic
+==================================================
+
+A lógica inicial do semantic plan deve funcionar sem LLM.
+
+Fluxo:
+
+1. Receber input.
+2. Normalizar texto:
+   - lowercase
+   - remover acentos
+   - trim
+   - remover espaços duplicados
+3. Buscar métricas ativas no banco.
+4. Para cada métrica:
+   - comparar nome normalizado.
+   - comparar synonyms normalizados.
+   - considerar domínio relacionado.
+5. Selecionar métrica com maior score.
+6. Detectar período:
+   - hoje → { raw: "hoje", type: "relative", value: "today" }
+   - ontem → { raw: "ontem", type: "relative", value: "yesterday" }
+   - mês atual / mes atual → { raw: "mês atual", type: "relative", value: "current_month" }
+   - semana → { raw: "semana", type: "relative", value: "current_week" }
+   - safra → { raw: "safra", type: "business_period", value: "harvest" }
+7. Detectar agrupamentos:
+   - turno → shift
+   - dia → day
+   - mês / mes → month
+   - fazenda → farm
+   - frente → front
+   - equipamento → equipment
+8. Sugerir skills:
+   - Sempre sugerir metric-resolver quando encontrar métrica.
+   - Sugerir ranges-relativos quando encontrar período.
+   - Sugerir turnos-rules quando groupBy incluir shift.
+   - Sugerir chart-recommendation quando input tiver gráfico, grafico, visualizar, tendência, tendencia.
+   - Sugerir data-freshness quando input tiver atualizado, atualização, atualizacao, defasagem.
+   - Sugerir answer-verifier sempre que encontrar métrica.
+9. Calcular confidence com regra simples:
+   - Sinônimo exato encontrado: +0.50
+   - Nome da métrica encontrado: +0.30
+   - Período detectado: +0.10
+   - Agrupamento detectado: +0.10
+   - Domínio detectado: +0.10
+   - Limitar máximo em 1.0
+10. Se nenhuma métrica for encontrada ou confidence < 0.5:
+   - needsClarification = true
+   - metric = null
+   - domain = null se não houver domínio detectado
+11. Salvar SemanticTest:
+   - input
+   - generatedPlan
+   - confidence
+   - needsClarification
+12. Retornar o plano.
+
+==================================================
+15. Verification Plan
+==================================================
+
+Automated:
+
+1. Subir banco:
+
+docker compose up -d
+
+2. Backend:
+
+cd backend
+npm install
+npx prisma generate
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+
+3. Frontend:
+
+cd frontend
+npm install
+npm run dev
+
+4. Testes manuais de API:
+
+GET http://localhost:3333/health
+Resultado esperado: 200 OK
+
+GET http://localhost:3333/api/domains
+Resultado esperado: lista de domínios do seed
+
+GET http://localhost:3333/api/metrics
+Resultado esperado: lista de métricas com domínio
+
+GET http://localhost:3333/api/skills
+Resultado esperado: lista de skills
+
+GET http://localhost:3333/api/dashboard/stats
+Resultado esperado: totais do sistema
+
+POST http://localhost:3333/api/semantic/plan
+Body:
+{
+  "input": "quanto moeu ontem por turno?"
+}
+
+Resultado esperado:
+Plano semântico com:
+- intent query_metric
+- domínio Matéria-Prima
+- métrica Moagem
+- período yesterday
+- groupBy shift
+- skills metric-resolver, ranges-relativos, turnos-rules, answer-verifier
+- confidence maior ou igual a 0.7
+- needsClarification false
+
+GET http://localhost:3333/api/semantic/history
+Resultado esperado: histórico com o teste salvo.
+
+Manual:
+
+- Verificar frontend em http://localhost:3000.
+- Verificar navegação entre páginas.
+- Verificar dashboard consumindo API real.
+- Verificar tabelas de domínios, métricas e skills.
+- Verificar simulador semântico.
+- Verificar histórico após gerar plano.
+- Verificar responsividade.
+- Verificar loading states.
+- Verificar error states.
+- Verificar empty states.
+
+==================================================
+16. README
+==================================================
+
+Criar README.md completo explicando:
+
+1. O que é o Helena Semantic Studio.
+2. Objetivo do projeto.
+3. Stack utilizada.
+4. Estrutura de pastas.
+5. Como subir PostgreSQL com Docker Compose.
+6. Como configurar variáveis de ambiente.
+7. Como instalar backend.
+8. Como rodar Prisma generate.
+9. Como rodar migration.
+10. Como rodar seed.
+11. Como iniciar backend.
+12. Como instalar frontend.
+13. Como iniciar frontend.
+14. Endpoints disponíveis.
+15. Telas disponíveis.
+16. Como testar o semantic plan.
+17. Como funciona a lógica inicial sem LLM.
+18. Roadmap futuro para integração com IA Helena.
+
+Deixar claro:
+
+- Esta é a primeira versão da camada semântica.
+- Ainda não há integração real com Power BI.
+- Ainda não há integração real com LLM.
+- Ainda não há integração real com workflows.
+- O foco é estruturar a base técnica e o contrato de semantic plan.
+
+==================================================
+17. Critérios de Aceite
+==================================================
+
+O projeto será considerado correto se:
+
+- O banco PostgreSQL sobe com Docker Compose.
+- O backend inicia sem erro.
+- O frontend inicia sem erro.
+- O Prisma conecta no banco.
+- As migrations funcionam.
+- O seed funciona.
+- GET /health retorna sucesso.
+- GET /api/dashboard/stats retorna totais.
+- GET /api/domains retorna domínios.
+- GET /api/metrics retorna métricas com domínio.
+- GET /api/skills retorna skills.
+- POST /api/semantic/plan gera plano semântico.
+- O teste semântico é salvo no banco.
+- GET /api/semantic/history retorna histórico.
+- O frontend consome o backend.
+- A página /dashboard exibe os totais reais.
+- A página /semantic gera plano semântico.
+- A página /history exibe testes salvos.
+- A estrutura está modular e pronta para crescer.
+- O visual segue padrão administrativo moderno.
+- O projeto está alinhado ao padrão técnico da IA Helena.
+- O código está separado em routes, controllers, services, repositories e schemas.
+- Não existe controller acessando Prisma diretamente.
+- O README permite que outra pessoa rode o projeto do zero.
+- Não há autenticação.
+- Não há integração externa real.
+- Não há dados sensíveis.
+
+==================================================
+18. Observações Finais
+==================================================
+
+Este projeto deve ser implementado como uma base real e funcional para o Helena Semantic Studio.
+
+A aplicação deve ser simples, limpa e extensível.
+
+O foco não é criar toda a IA Helena agora.
+
+O foco é criar a primeira interface administrativa e técnica da camada semântica, com:
+
+- domínios
+- métricas
+- skills
+- simulação de pergunta
+- semantic plan
+- histórico
+- dashboard
+
+Futuramente, essa aplicação poderá evoluir para:
+
+- consumir catálogos reais da Helena
+- importar skills reais
+- sugerir workflows
+- chamar LLM
+- conectar Power BI
+- conectar n8n
+- conectar APIs internas
+- executar semantic plans em produção
