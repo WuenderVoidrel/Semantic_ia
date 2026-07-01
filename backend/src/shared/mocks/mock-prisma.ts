@@ -565,7 +565,13 @@ export class MockPrismaClient {
       if (!item) {
         throw new Error("Helena conversation not found");
       }
-      Object.assign(item, data);
+      const { turnCount, ...rest } = data as Partial<HelenaConversationRecord> & { turnCount?: number | { increment: number } };
+      Object.assign(item, rest);
+      if (typeof turnCount === "number") {
+        item.turnCount = turnCount;
+      } else if (turnCount && typeof turnCount === "object" && "increment" in turnCount) {
+        item.turnCount += turnCount.increment;
+      }
       return item;
     }
   };
