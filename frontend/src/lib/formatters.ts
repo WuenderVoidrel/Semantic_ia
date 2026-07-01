@@ -17,3 +17,15 @@ export function formatPercent(value: number) {
 export function formatStatus(value: string) {
   return STATUS_LABELS[value] ?? value;
 }
+
+export function formatUsd(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" }).format(value);
+}
+
+export function formatInt(value: number) {
+  return new Intl.NumberFormat("pt-BR").format(value);
+}
+
+export function formatMs(value: number) {
+  return `${new Intl.NumberFormat("pt-BR").format(Math.round(value))} ms`;
+}

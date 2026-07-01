@@ -157,3 +157,11 @@ export type DashboardStats = {
   skills: number;
   semanticTests: number;
 };
+
+export type TelemetryStats = {
+  totals: { turns: number; conversations: number; costUsd: number; totalTokens: number; avgLatencyMs: number; errorRate: number };
+  latency: { p50: number; p95: number };
+  byDomain: Array<{ domain: string; turns: number; costUsd: number; avgLatencyMs: number }>;
+  feedback: { like: number; dislike: number; none: number };
+  volumeByDay: Array<{ day: string; turns: number }>;
+};

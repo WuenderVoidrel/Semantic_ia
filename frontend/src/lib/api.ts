@@ -8,7 +8,8 @@
   SemanticPlan,
   SemanticRelayResult,
   SemanticTest,
-  Skill
+  Skill,
+  TelemetryStats
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
@@ -111,4 +112,8 @@ export function getGoldenCases() {
 
 export function exportGoldenCases() {
   return apiFetch<unknown[]>("/api/golden-cases/export");
+}
+
+export function getTelemetryStats() {
+  return apiFetch<TelemetryStats>("/api/telemetry/stats");
 }
