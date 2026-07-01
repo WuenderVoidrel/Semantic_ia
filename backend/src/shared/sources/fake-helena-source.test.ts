@@ -45,13 +45,13 @@ describe("FakeHelenaSource", () => {
 
   it("aplica o watermark (since) de forma incremental (exclusivo)", async () => {
     const source = new FakeHelenaSource(turns);
-    const result = await source.fetchNewBiTurns({ since: new Date("2026-06-30T10:00:00Z"), filter: { chatSlugs: [] }, limit: 100 });
+    const result = await source.fetchNewBiTurns({ since: new Date("2026-06-30T10:00:00Z"), filter: { chatSlugs: ["helena", "entrevista-rh"] }, limit: 100 });
     expect(result.map((t) => t.sourceAssistantMessageId)).toEqual(["a1", "a2", "a3"].filter((id) => id !== "a1"));
   });
 
   it("respeita o limit e ordena por sourceCreatedAt asc", async () => {
     const source = new FakeHelenaSource(turns);
-    const result = await source.fetchNewBiTurns({ since: null, filter: { chatSlugs: [] }, limit: 1 });
+    const result = await source.fetchNewBiTurns({ since: null, filter: { chatSlugs: ["helena", "entrevista-rh"] }, limit: 1 });
     expect(result.map((t) => t.sourceAssistantMessageId)).toEqual(["a1"]);
   });
 });

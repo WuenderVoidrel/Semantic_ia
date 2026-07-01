@@ -5,7 +5,7 @@ export class FakeHelenaSource implements HelenaSourceClient {
 
   async fetchNewBiTurns(params: { since: Date | null; filter: BiFilter; limit: number }): Promise<RawBiTurn[]> {
     const allowSlug = (slug: string | null) =>
-      params.filter.chatSlugs.length === 0 ? true : Boolean(slug && params.filter.chatSlugs.includes(slug));
+      params.filter.chatSlugs.length > 0 && Boolean(slug && params.filter.chatSlugs.includes(slug));
 
     return this.turns
       .filter((turn) => (params.since ? turn.sourceCreatedAt.getTime() > params.since.getTime() : true))

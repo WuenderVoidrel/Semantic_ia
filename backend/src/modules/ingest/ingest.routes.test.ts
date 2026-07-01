@@ -22,7 +22,7 @@ async function buildTestApp() {
   const app = Fastify();
   const prisma = new MockPrismaClient();
   app.decorate("prisma", prisma as never);
-  const service = new IngestService(new IngestRepository(prisma), new FakeHelenaSource([raw("a1")]), { filter: { chatSlugs: [] } });
+  const service = new IngestService(new IngestRepository(prisma), new FakeHelenaSource([raw("a1")]), { filter: { chatSlugs: ["helena"] } });
   app.decorate("ingestService", service as never);
   await ingestRoutes(app);
   await app.ready();

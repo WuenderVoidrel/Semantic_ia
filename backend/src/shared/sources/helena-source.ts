@@ -60,9 +60,12 @@ LEFT JOIN LATERAL (
   LIMIT 1
 ) fb ON true
 WHERE am.role = 'assistant'
-  AND c.interview_template IS NULL
+  -- Filtro de BI + protecao de PII por whitelist de slug. Nesta base TODO chat tem interview_template
+  -- nao-nulo, entao o discriminador de "conversa de BI" e o slug (HELENA_BI_CHAT_SLUGS). Whitelist vazia
+  -- => nada e importado (fail-safe: nao traz o chat de RH/entrevista com PII de candidatos).
+  AND cardinality($2::text[]) > 0
+  AND c.slug = ANY($2)
   AND ($1::timestamptz IS NULL OR am.created_at >= $1)  -- >= (nao >) + idempotencia por sourceAssistantMessageId evita pular turnos com mesmo timestamp na borda do LIMIT
-  AND (cardinality($2::text[]) = 0 OR c.slug = ANY($2))
 ORDER BY am.created_at ASC
 LIMIT $3;
 `;

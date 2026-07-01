@@ -19,7 +19,7 @@ describe("IngestService.runSync", () => {
   it("importa turnos novos e grava sync success com watermark", async () => {
     const prisma = new MockPrismaClient();
     const source = new FakeHelenaSource([raw("a1", "2026-06-30T10:00:00Z"), raw("a2", "2026-06-30T11:00:00Z")]);
-    const service = new IngestService(new IngestRepository(prisma), source, { filter: { chatSlugs: [] } });
+    const service = new IngestService(new IngestRepository(prisma), source, { filter: { chatSlugs: ["helena"] } });
 
     const result = await service.runSync("manual");
 
@@ -31,7 +31,7 @@ describe("IngestService.runSync", () => {
   it("é idempotente e incremental (2ª rodada não reimporta)", async () => {
     const prisma = new MockPrismaClient();
     const source = new FakeHelenaSource([raw("a1", "2026-06-30T10:00:00Z"), raw("a2", "2026-06-30T11:00:00Z")]);
-    const service = new IngestService(new IngestRepository(prisma), source, { filter: { chatSlugs: [] } });
+    const service = new IngestService(new IngestRepository(prisma), source, { filter: { chatSlugs: ["helena"] } });
 
     await service.runSync("manual");
     const second = await service.runSync("manual");
@@ -49,7 +49,7 @@ describe("IngestService.runSync", () => {
       ping: async () => false,
       close: async () => undefined
     };
-    const service = new IngestService(new IngestRepository(prisma), failing, { filter: { chatSlugs: [] } });
+    const service = new IngestService(new IngestRepository(prisma), failing, { filter: { chatSlugs: ["helena"] } });
 
     const result = await service.runSync("schedule");
 
