@@ -13,6 +13,13 @@ function isValidUrlList(value: string) {
   return origins.every((origin) => z.string().url().safeParse(origin).success);
 }
 
+export function parseBiChatSlugs(value: string) {
+  return value
+    .split(",")
+    .map((slug) => slug.trim())
+    .filter(Boolean);
+}
+
 const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL obrigatoria.").optional(),
@@ -21,7 +28,11 @@ const envSchema = z
     CORS_ORIGIN: z.string().refine(isValidUrlList, "CORS_ORIGIN deve conter uma ou mais URLs validas."),
     DISABLE_DATABASE: z.coerce.boolean().default(false),
     HELENA_ROUTER_URL: z.string().url().optional(),
-    HELENA_RELAY_TIMEOUT_MS: z.coerce.number().int().positive().default(15000)
+    HELENA_RELAY_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
+    HELENA_SOURCE_DATABASE_URL: z.string().min(1).optional(),
+    HELENA_SYNC_ENABLED: z.coerce.boolean().default(false),
+    HELENA_SYNC_INTERVAL_MS: z.coerce.number().int().positive().default(120000),
+    HELENA_BI_CHAT_SLUGS: z.string().default("").transform(parseBiChatSlugs)
   })
   .superRefine((data, ctx) => {
     if (!data.DISABLE_DATABASE && !data.DATABASE_URL) {
