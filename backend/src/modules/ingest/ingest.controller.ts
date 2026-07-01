@@ -17,10 +17,11 @@ export class IngestController {
 
   status = async (request: FastifyRequest, reply: FastifyReply) => {
     const { limit } = syncStatusQuerySchema.parse(request.query);
-    const [runs, watermark] = await Promise.all([
+    const [runs, watermark, sourceHealthy] = await Promise.all([
       this.repository.listRecentSyncRuns(limit),
-      this.repository.getLastWatermark()
+      this.repository.getLastWatermark(),
+      this.service.pingSource()
     ]);
-    return reply.send({ runs, watermark });
+    return reply.send({ runs, watermark, sourceHealthy });
   };
 }

@@ -2,6 +2,8 @@ import type { BiFilter, HelenaSourceClient } from "../../shared/sources/helena-s
 import { IngestRepository } from "./ingest.repository.js";
 import { computeWatermark, rawToTurnData } from "./ingest.transform.js";
 
+const DEFAULT_BATCH_LIMIT = 500;
+
 type SyncTrigger = "schedule" | "manual";
 
 type SyncResult = {
@@ -18,7 +20,11 @@ export class IngestService {
     private readonly source: HelenaSourceClient,
     private readonly options: { filter: BiFilter; batchLimit?: number }
   ) {
-    this.batchLimit = options.batchLimit ?? 500;
+    this.batchLimit = options.batchLimit ?? DEFAULT_BATCH_LIMIT;
+  }
+
+  pingSource(): Promise<boolean> {
+    return this.source.ping();
   }
 
   async runSync(trigger: SyncTrigger): Promise<SyncResult> {

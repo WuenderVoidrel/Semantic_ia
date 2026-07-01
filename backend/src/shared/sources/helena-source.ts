@@ -41,7 +41,9 @@ LEFT JOIN LATERAL (
   ORDER BY u.created_at DESC
   LIMIT 1
 ) um ON true
+-- helena_session_context.session_id e text; chat_messages/workflow_runs.session_id sao uuid — dai o ::text so no join de session_context.
 LEFT JOIN helena_session_context sc ON sc.session_id = am.session_id::text
+-- Heuristica: casa o workflow_run mais recente ate ~2s apos a msg do assistente (nao ha message_id em workflow_runs).
 LEFT JOIN LATERAL (
   SELECT w.model, w.prompt_tokens, w.completion_tokens, w.total_tokens, w.cached_tokens,
          w.estimated_cost, w.latency_ms, w.status, w.error_message
@@ -50,10 +52,16 @@ LEFT JOIN LATERAL (
   ORDER BY w.created_at DESC
   LIMIT 1
 ) wr ON true
-LEFT JOIN chat_message_feedback fb ON fb.message_id = am.id
+LEFT JOIN LATERAL (
+  SELECT f.rating, f.reason_code
+  FROM chat_message_feedback f
+  WHERE f.message_id = am.id
+  ORDER BY f.created_at DESC
+  LIMIT 1
+) fb ON true
 WHERE am.role = 'assistant'
   AND c.interview_template IS NULL
-  AND ($1::timestamptz IS NULL OR am.created_at > $1)
+  AND ($1::timestamptz IS NULL OR am.created_at >= $1)  -- >= (nao >) + idempotencia por sourceAssistantMessageId evita pular turnos com mesmo timestamp na borda do LIMIT
   AND (cardinality($2::text[]) = 0 OR c.slug = ANY($2))
 ORDER BY am.created_at ASC
 LIMIT $3;

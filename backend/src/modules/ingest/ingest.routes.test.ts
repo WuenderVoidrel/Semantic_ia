@@ -50,5 +50,6 @@ describe("rotas de ingestao", () => {
     const body = response.json();
     expect(Array.isArray(body.runs)).toBe(true);
     expect(body.runs.length).toBeGreaterThan(0);
+    expect(response.json().sourceHealthy).toBe(true);
   });
 });
