@@ -5,10 +5,12 @@ import { dashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
 import { domainRoutes } from "./modules/domains/domain.routes.js";
 import { goldenCaseRoutes } from "./modules/golden-cases/golden-case.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
+import { ingestRoutes } from "./modules/ingest/ingest.routes.js";
 import { metricRoutes } from "./modules/metrics/metric.routes.js";
 import { semanticRoutes } from "./modules/semantic/semantic.routes.js";
 import { skillRoutes } from "./modules/skills/skill.routes.js";
 import { registerCors } from "./plugins/cors.js";
+import { registerIngest } from "./plugins/ingest.js";
 import { registerPrisma } from "./plugins/prisma.js";
 import { globalErrorHandler } from "./shared/errors/error-handler.js";
 
@@ -19,6 +21,7 @@ export async function buildApp() {
 
   await registerCors(app);
   await registerPrisma(app);
+  await registerIngest(app);
 
   app.setErrorHandler(globalErrorHandler);
 
@@ -30,6 +33,7 @@ export async function buildApp() {
   await semanticRoutes(app);
   await catalogSuggestionRoutes(app);
   await goldenCaseRoutes(app);
+  await ingestRoutes(app);
 
   return app;
 }
