@@ -9,7 +9,10 @@
   SemanticRelayResult,
   SemanticTest,
   Skill,
-  TelemetryStats
+  TelemetryStats,
+  TelemetryTurn,
+  TelemetryTurnsFilters,
+  TelemetryTurnsResponse
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
@@ -116,4 +119,20 @@ export function exportGoldenCases() {
 
 export function getTelemetryStats() {
   return apiFetch<TelemetryStats>("/api/telemetry/stats");
+}
+
+export function getTelemetryTurns(filters: TelemetryTurnsFilters = {}) {
+  const params = new URLSearchParams();
+  if (filters.limit !== undefined) params.set("limit", String(filters.limit));
+  if (filters.offset !== undefined) params.set("offset", String(filters.offset));
+  if (filters.domain) params.set("domain", filters.domain);
+  if (filters.feedback) params.set("feedback", filters.feedback);
+  if (filters.divergence !== undefined) params.set("divergence", String(filters.divergence));
+
+  const query = params.toString();
+  return apiFetch<TelemetryTurnsResponse>(`/api/telemetry/turns${query ? `?${query}` : ""}`);
+}
+
+export function getTelemetryTurn(id: string) {
+  return apiFetch<TelemetryTurn>(`/api/telemetry/turns/${id}`);
 }

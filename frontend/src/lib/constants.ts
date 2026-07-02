@@ -1,6 +1,7 @@
 ﻿export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", key: "dashboard" },
   { href: "/telemetry", label: "Telemetria", key: "telemetry" },
+  { href: "/conversations", label: "Conversas", key: "conversations" },
   { href: "/domains", label: "Dominios", key: "domains" },
   { href: "/metrics", label: "Metricas", key: "metrics" },
   { href: "/skills", label: "Skills", key: "skills" },

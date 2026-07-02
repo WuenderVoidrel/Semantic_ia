@@ -165,3 +165,53 @@ export type TelemetryStats = {
   feedback: { like: number; dislike: number; none: number };
   volumeByDay: Array<{ day: string; turns: number }>;
 };
+
+export type TelemetryTurn = {
+  id: string;
+  conversationId: string;
+  sourceSessionId: string;
+  sourceCreatedAt: string;
+  importedAt: string;
+  question: string;
+  answer: string;
+  domain: string | null;
+  routingReason: string | null;
+  confidence: number | null;
+  metricsRequested: unknown;
+  periodStart: string | null;
+  periodEnd: string | null;
+  groupBy: unknown;
+  toolUsed: string | null;
+  model: string | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  cachedTokens: number | null;
+  costUsd: string | number | null;
+  latencyMs: number | null;
+  status: string | null;
+  errorCode: string | null;
+  verifierOk: boolean | null;
+  feedbackRating: string | null;
+  feedbackReason: string | null;
+  studioPlan: SemanticPlan | { skipped: string } | null;
+  studioDomain: string | null;
+  studioMetricKey: string | null;
+  studioConfidence: number | null;
+  hasDivergence: boolean;
+};
+
+export type TelemetryTurnsResponse = {
+  items: TelemetryTurn[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type TelemetryTurnsFilters = {
+  limit?: number;
+  offset?: number;
+  domain?: string;
+  feedback?: "like" | "dislike";
+  divergence?: boolean;
+};

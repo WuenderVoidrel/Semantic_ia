@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, BookOpen, BrainCircuit, ClipboardCheck, FolderKanban, LayoutDashboard, LineChart, Sparkles, Workflow } from "lucide-react";
+import { Activity, BarChart3, BookOpen, BrainCircuit, ClipboardCheck, FolderKanban, LayoutDashboard, LineChart, MessagesSquare, Sparkles, Workflow } from "lucide-react";
 
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const icons = {
   dashboard: LayoutDashboard,
   telemetry: Activity,
+  conversations: MessagesSquare,
   domains: FolderKanban,
   metrics: BarChart3,
   skills: BrainCircuit,
