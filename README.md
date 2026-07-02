@@ -15,6 +15,9 @@ O projeto entrega um painel administrativo com:
 - simulador de perguntas em linguagem natural
 - geracao de semantic plan sem LLM
 - historico de testes semanticos
+- **telemetria real da Helena**: ingestao read-only das conversas do assistente (custo, tokens, latencia, feedback)
+- **tela de conversas reais** com o roteamento da Helena lado a lado com a leitura do Studio (divergencias destacadas)
+- **enriquecimento semantico**: o motor do Studio analisa cada pergunta real, rotula dominio/metrica e gera sugestoes de alias para curadoria
 
 ## Stack
 
@@ -200,6 +203,20 @@ Resposta:
 - `POST /api/semantic/relay`
 - `GET /api/semantic/history`
 
+### Ingestao de telemetria (Helena real)
+
+- `POST /api/ingest/sync` — importa turnos novos do banco do assistente (`ia_helena_db`), read-only e idempotente
+- `GET /api/ingest/status` — ultimas sincronizacoes, watermark e saude da fonte
+
+Configuracao via `.env`: `HELENA_SOURCE_DATABASE_URL` (fonte), `HELENA_BI_CHAT_SLUGS` (whitelist de chats de BI — vazia importa nada, protegendo PII de RH), `HELENA_SYNC_ENABLED` + `HELENA_SYNC_INTERVAL_MS` (scheduler periodico).
+
+### Telemetria
+
+- `GET /api/telemetry/stats` — KPIs agregados (custo, tokens, latencia p50/p95, erro, feedback, volume por dia)
+- `GET /api/telemetry/turns` — lista paginada com filtros (`domain`, `feedback`, `divergence`, `limit`, `offset`)
+- `GET /api/telemetry/turns/:id` — detalhe completo de um turno
+- `POST /api/telemetry/enrich` — roda o motor semantico do Studio nos turnos pendentes (rotula dominio/metrica, marca divergencia e gera sugestoes de alias)
+
 Exemplo de body:
 
 ```json
@@ -227,6 +244,8 @@ Exemplo de body:
 
 - `/` landing page
 - `/dashboard` dashboard tecnico
+- `/telemetry` observabilidade da Helena real (KPIs + graficos de custo, latencia, volume e feedback)
+- `/conversations` conversas reais com filtros e detalhe por turno (roteamento Helena vs leitura do Studio)
 - `/domains` tabela de dominios
 - `/metrics` tabela de metricas
 - `/skills` tabela de skills
