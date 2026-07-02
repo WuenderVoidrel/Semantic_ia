@@ -4,11 +4,19 @@ import { env } from "../env.js";
 import { createHelenaSource } from "../shared/sources/create-helena-source.js";
 import { IngestRepository } from "../modules/ingest/ingest.repository.js";
 import { IngestService } from "../modules/ingest/ingest.service.js";
+import { EnrichService } from "../modules/telemetry/enrich.service.js";
+import { TelemetryRepository } from "../modules/telemetry/telemetry.repository.js";
+import { SemanticRepository } from "../modules/semantic/semantic.repository.js";
+import { SemanticService } from "../modules/semantic/semantic.service.js";
 
 export async function registerIngest(app: FastifyInstance) {
   const source = createHelenaSource();
   const repository = new IngestRepository(app.prisma);
   const service = new IngestService(repository, source, { filter: { chatSlugs: env.HELENA_BI_CHAT_SLUGS } });
+  const enrichService = new EnrichService(
+    new TelemetryRepository(app.prisma),
+    new SemanticService(new SemanticRepository(app.prisma))
+  );
 
   app.decorate("ingestService", service as never);
 
@@ -22,6 +30,10 @@ export async function registerIngest(app: FastifyInstance) {
     try {
       const result = await service.runSync("schedule");
       app.log.info({ result }, "ingest: ciclo concluido");
+      const enriched = await enrichService.enrichPending();
+      if (enriched.processed > 0) {
+        app.log.info({ enriched }, "ingest: enriquecimento concluido");
+      }
     } catch (error) {
       app.log.error({ error }, "ingest: falha inesperada no ciclo");
     } finally {

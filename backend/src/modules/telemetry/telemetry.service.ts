@@ -1,5 +1,6 @@
+import { AppError } from "../../shared/errors/app-error.js";
 import { computeTelemetryStats, type StatTurn } from "./telemetry.stats.js";
-import { TelemetryRepository } from "./telemetry.repository.js";
+import { TelemetryRepository, type TurnListFilters } from "./telemetry.repository.js";
 
 export class TelemetryService {
   constructor(private readonly repository: TelemetryRepository) {}
@@ -22,5 +23,24 @@ export class TelemetryService {
     }));
 
     return computeTelemetryStats(normalized, conversations);
+  }
+
+  async listTurns(filters: TurnListFilters) {
+    const [items, total] = await Promise.all([
+      this.repository.listTurns(filters),
+      this.repository.countTurns(filters)
+    ]);
+
+    return { items, total, limit: filters.limit, offset: filters.offset };
+  }
+
+  async getTurn(id: string) {
+    const turn = await this.repository.getTurn(id);
+
+    if (!turn) {
+      throw new AppError("Turno nao encontrado.", 404);
+    }
+
+    return turn;
   }
 }
