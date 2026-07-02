@@ -156,6 +156,32 @@ function createTimestamp() {
   return new Date();
 }
 
+type HelenaTurnWhere = {
+  domain?: string;
+  feedbackRating?: string;
+  hasDivergence?: boolean;
+  studioConfidence?: number | null;
+};
+
+function matchesHelenaTurnWhere(turn: HelenaTurnRecord, where?: HelenaTurnWhere) {
+  if (!where) {
+    return true;
+  }
+  if (where.domain !== undefined && turn.domain !== where.domain) {
+    return false;
+  }
+  if (where.feedbackRating !== undefined && turn.feedbackRating !== where.feedbackRating) {
+    return false;
+  }
+  if (where.hasDivergence !== undefined && turn.hasDivergence !== where.hasDivergence) {
+    return false;
+  }
+  if (where.studioConfidence !== undefined && turn.studioConfidence !== where.studioConfidence) {
+    return false;
+  }
+  return true;
+}
+
 function sortByNameAsc<T extends { name: string }>(items: T[]) {
   return [...items].sort((first, second) => first.name.localeCompare(second.name, "pt-BR"));
 }
@@ -577,19 +603,23 @@ export class MockPrismaClient {
   };
 
   helenaTurn = {
-    count: async () => this.store.helenaTurns.length,
+    count: async (args?: { where?: HelenaTurnWhere }) =>
+      this.store.helenaTurns.filter((turn) => matchesHelenaTurnWhere(turn, args?.where)).length,
     findUnique: async ({ where }: { where: { sourceAssistantMessageId?: string; id?: string } }) =>
       this.store.helenaTurns.find((turn) =>
         (where.sourceAssistantMessageId && turn.sourceAssistantMessageId === where.sourceAssistantMessageId) ||
         (where.id && turn.id === where.id)
       ) ?? null,
-    findMany: async (args?: { orderBy?: { sourceCreatedAt?: "desc" | "asc" }; take?: number }) => {
-      const sorted = [...this.store.helenaTurns].sort((first, second) =>
-        args?.orderBy?.sourceCreatedAt === "asc"
-          ? first.sourceCreatedAt.getTime() - second.sourceCreatedAt.getTime()
-          : second.sourceCreatedAt.getTime() - first.sourceCreatedAt.getTime()
-      );
-      return typeof args?.take === "number" ? sorted.slice(0, args.take) : sorted;
+    findMany: async (args?: { where?: HelenaTurnWhere; orderBy?: { sourceCreatedAt?: "desc" | "asc" }; skip?: number; take?: number }) => {
+      const sorted = this.store.helenaTurns
+        .filter((turn) => matchesHelenaTurnWhere(turn, args?.where))
+        .sort((first, second) =>
+          args?.orderBy?.sourceCreatedAt === "asc"
+            ? first.sourceCreatedAt.getTime() - second.sourceCreatedAt.getTime()
+            : second.sourceCreatedAt.getTime() - first.sourceCreatedAt.getTime()
+        );
+      const start = args?.skip ?? 0;
+      return typeof args?.take === "number" ? sorted.slice(start, start + args.take) : sorted.slice(start);
     },
     create: async ({ data }: { data: Partial<HelenaTurnRecord> & Pick<HelenaTurnRecord, "conversationId" | "sourceSessionId" | "sourceAssistantMessageId" | "sourceCreatedAt" | "question" | "answer"> }) => {
       const created: HelenaTurnRecord = {
